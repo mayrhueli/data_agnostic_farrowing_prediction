@@ -35,10 +35,10 @@ def calculate_features_for_timeseries(series, eventtime, full_features=False):
     end = pd.Timestamp((startdatetime + pd.DateOffset(days=1)).date()).replace(hour=18)
     mean_day = series[(start <= series.timestamp) & (series.timestamp <= end)].Acc.mean()
 
-    # calculate mean for 24 h with guaranteed no nest building
+    # calculate mean for 24h baseline (guaranteed before nest building)
     mean_24 = series.head(DAY).Acc.mean()
 
-    # calculate mean for 48 h with guaranteed no nest building
+    # calculate mean for 48h baseline (guaranteed before nest building)
     mean_48 = series.head(TWO_DAYS).Acc.mean()
 
     # calculate mean over the last 12h
