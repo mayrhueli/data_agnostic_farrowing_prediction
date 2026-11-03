@@ -31,10 +31,10 @@ are detected the same way here by dropping ``NaN`` Acc rows first, so
 one gap-detection function covers both signal types without needing to
 know which is which.
 
-Usage:
+Usage (from the repo root):
 
     python -m video_activity.gap_report                       # every sow with accelerometer or video data
-    python -m video_activity.gap_report --sow "147368 19" "X"  # restrict to specific sows
+    python -m video_activity.gap_report --sow "sample_sow"      # restrict to specific sows
 
 Output (``out/video_case_study/gap_report/``):
 
@@ -120,7 +120,7 @@ def gap_report_for_sow(sow: str, pairs_flags: dict = None) -> dict:
     try:
         meta = load_meta(sow)
         farrowing_time = meta["start_farrowing"]
-    except Exception as e:  # noqa: BLE001 - missing/bad meta shouldn't block the per-signal gap counts
+    except Exception as e:
         farrowing_time = None
         meta_error = f"{type(e).__name__}: {e}"
     else:
@@ -131,7 +131,7 @@ def gap_report_for_sow(sow: str, pairs_flags: dict = None) -> dict:
 
     for signal_name, loader in LOADERS.items():
         if flags and not flags.get(signal_name, True):
-            continue  # file doesn't exist for this sow/signal — not an error, just not present
+            continue  # file doesn't exist for this sow/signal
         try:
             series = loader(sow)
             gaps = detect_gaps(series)
@@ -144,7 +144,7 @@ def gap_report_for_sow(sow: str, pairs_flags: dict = None) -> dict:
                 "mean_gap_hours": float(gaps["duration_hours"].mean()) if not gaps.empty else 0.0,
                 "gaps": gaps.to_dict("records"),
             }
-        except Exception as e:  # noqa: BLE001 - one bad signal file must not cost the other
+        except Exception as e: 
             report[signal_name] = {"error": f"{type(e).__name__}: {e}"}
 
     return report

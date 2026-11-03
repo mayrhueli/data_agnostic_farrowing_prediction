@@ -1,6 +1,19 @@
 # Copyright (C) 2026 Elisabeth Mayrhuber
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""CUSUM changepoint detection for nest-building onset with parameters
+"""CUSUM changepoint detection for nest-building onset, with parameters
 k=2 and threshold=150. Runs on the 12h rolling average of the activity
 signal, starting two days after the sow enters the farrowing pen.
 """

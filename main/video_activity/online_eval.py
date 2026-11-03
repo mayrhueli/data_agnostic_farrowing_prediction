@@ -16,27 +16,15 @@
 """The **online** evaluation setting, end to end: run detection
 (CUSUM/BEAST/NestDetect) first, and only start the prediction stage once
 (and if) a detector actually raises an alarm, building instances forward
-from that alarm time using only data available up to each point — same
-as a live deployment — rather than ``instance_tables.build_instance_table``'s
-farrowing-anchored fixed window, which needs to already know when
-farrowing happens to decide where its window starts. Runs for both
-accelerometer and video.
+from that alarm time using only data available up to each point.
 
-Uses the **selected model** — the one ``sr_transfer.py`` actually
-trained and persisted (``model.json``, ``accelerometer_scaler.joblib``,
-``per_sow_baselines.json``) — not a freshly fit stand-in, so this tests
-the production model's online accuracy specifically. Run that first:
+Run that first:
 
     python -m video_activity.sr_transfer
     python -m video_activity.online_eval                       # every sow with accelerometer or video data
-    python -m video_activity.online_eval --sow "147368 19"      # restrict to specific sows
+    python -m video_activity.online_eval --sow "sample_sow"      # restrict to specific sows
     python -m video_activity.online_eval --methods NestDetect   # just one detector
 
-A detector that never fires, or fires at/after farrowing, has **no**
-online prediction window — that is itself the reportable result (a
-pipeline failure a farrowing-anchored prediction-only test can't see at
-all, since it always has a window by construction), not something
-skipped silently.
 
 Output (``out/video_case_study/online_eval/``): ``online_eval_long.csv``
 (one row per sow x signal x method x scaling strategy), a summary CSV,
@@ -67,9 +55,7 @@ METHODS = ("NestDetect", "CUSUM", "BEAST")
 
 def load_selected_model(sr_transfer_dir: Path = SR_TRANSFER_DIR):
     """Load the model + accelerometer scaler + video per-sow baselines
-    ``sr_transfer.py`` persisted, rather than retraining — same
-    reasoning as ``figures.py``: a fresh GP run isn't reproducible, so
-    testing "the selected model" means the one actually on disk.
+    ``sr_transfer.py`` persisted.
     """
     model_path = sr_transfer_dir / "model.json"
     scaler_path = sr_transfer_dir / "accelerometer_scaler.joblib"
@@ -101,10 +87,7 @@ def accelerometer_training_pool_sows(sr_transfer_dir: Path = SR_TRANSFER_DIR) ->
     specific model's training data either, even though some other
     fold's model did train on it.
 
-    Returns an empty set if the needed files aren't there, or the run
-    used the single-sow smoke-test fallback (no fold structure to derive
-    this from) — callers should then treat held-out-ness as unknown,
-    never assume either way from an empty set.
+    Returns an empty set if the needed files aren't there.
     """
     oof_path = sr_transfer_dir / "accelerometer_cv_oof.csv"
     summary_path = sr_transfer_dir / "sr_transfer_summary.json"
@@ -168,7 +151,7 @@ def evaluate_online_for_sow_signal(sow: str, signal_name: str, model, accelerome
     """Detect, then predict online, for one sow/signal across every
     method in ``methods``. Returns one dict per method — a method whose
     detector never fires, or fires at/after farrowing, gets a dict with
-    ``online_eval=None`` and a reason, not a silently skipped row.
+    ``online_eval=None`` and a reason.
     """
     meta = load_meta(sow)
     farrowing_time = meta["start_farrowing"]
@@ -210,7 +193,7 @@ def evaluate_online_for_sow_signal(sow: str, signal_name: str, model, accelerome
             online_eval = _scaled_predictions(table, signal_name, sow, model, accelerometer_scaler,
                                                per_sow_baselines, return_rows=return_rows)
             rows.append({**base, "online_eval": online_eval, "online_eval_error": None})
-        except Exception as e:  # noqa: BLE001 - one bad sow/signal/method must not cost the rest
+        except Exception as e:  # one bad sow/signal/method must not cost the rest
             rows.append({**base, "online_eval": None, "online_eval_error": f"{type(e).__name__}: {e}"})
 
     return rows

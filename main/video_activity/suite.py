@@ -13,18 +13,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""Batch suite: run the accelerometer-vs-video nest-building detection
-case study over every paired sow you have locally, and aggregate the
-results.
+"""Batch suite: run the accelerometer-vs-video case study over every
+paired sow you have locally, and aggregate the results.
 
-Usage:
+Usage (from the repo root):
 
     python -m video_activity.suite                 # run every complete pair
-    python -m video_activity.suite --sow "ID" --sow "ID"
+    python -m video_activity.suite --sow "sample_sow"
 
 Drop new sows in as ``data/raw/accelerometer/<sow>.csv``,
-``data/raw/video/<sow>_activity.csv`` and ``data/raw/meta/<sow>.csv`` (see
-video_activity/README.md) and re-run; a sow missing any of the three
+``data/raw/video/<sow>_activity.csv`` and ``data/raw/meta/<sow>.csv``
+(see the top-level README's Data layout section) and re-run; a sow missing any of the three
 files is reported and skipped rather than failing the whole run, and a
 sow that raises during processing (bad timestamps, too little data
 before farrowing, ...) is caught and reported the same way so one bad
@@ -148,12 +147,7 @@ def plot_detection_summary(det_stats: pd.DataFrame, out_path: Path):
 
 def _df_to_markdown_or_text(df: pd.DataFrame) -> str:
     """df.to_markdown() needs the optional `tabulate` package at a
-    version pandas is happy with (>=0.9.0); a stale install raises
-    ImportError deep inside pandas. That's just a reporting nicety, not
-    worth losing the whole suite run over after the actual analysis
-    already succeeded, so fall back to a plain fixed-width table in a
-    code fence — still readable in the .md file, just not a real
-    Markdown table.
+    version pandas is happy with (>=0.9.0).
     """
     try:
         return df.to_markdown(index=False)
@@ -196,7 +190,7 @@ def run_suite(sows: list = None) -> dict:
     run_sows = sows if sows else complete_pairs(pairs)
     if not run_sows:
         print("No complete accelerometer+video+meta triplets found under data/raw. "
-              "See video_activity/README.md for the expected layout.")
+              "See the top-level README's Data layout section for the expected layout.")
         return {"sows": [], "errors": {}, "missing": missing}
 
     results = {}
@@ -205,7 +199,7 @@ def run_suite(sows: list = None) -> dict:
         print(f"\n=== Running {sow} ===")
         try:
             results[sow] = case_study.main(sow)
-        except Exception as e:  # noqa: BLE001 - one bad pair must not stop the suite
+        except Exception as e:  # one bad pair must not stop the suite
             print(f"ERROR in {sow}: {type(e).__name__}: {e}")
             traceback.print_exc()
             errors[sow] = f"{type(e).__name__}: {e}"

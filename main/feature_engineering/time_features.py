@@ -1,4 +1,17 @@
 # Copyright (C) 2026 Elisabeth Mayrhuber
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from scipy.stats import linregress
 
@@ -35,10 +48,10 @@ def calculate_features_for_timeseries(series, eventtime, full_features=False):
     end = pd.Timestamp((startdatetime + pd.DateOffset(days=1)).date()).replace(hour=18)
     mean_day = series[(start <= series.timestamp) & (series.timestamp <= end)].Acc.mean()
 
-    # calculate mean for 24h baseline (guaranteed before nest building)
+    # calculate mean for 24 h with guaranteed no nest building
     mean_24 = series.head(DAY).Acc.mean()
 
-    # calculate mean for 48h baseline (guaranteed before nest building)
+    # calculate mean for 48 h with guaranteed no nest building
     mean_48 = series.head(TWO_DAYS).Acc.mean()
 
     # calculate mean over the last 12h

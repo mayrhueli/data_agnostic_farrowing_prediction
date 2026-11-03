@@ -14,8 +14,7 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 """Pool per-sow instance tables (across every sow you have for a given
-signal type) into one table, for cross-sow training — grouped by sow,
-as opposed to the single-sow checks in case_study.py.
+signal type) into one table, for cross-sow training grouped by sow.
 """
 import pandas as pd
 
@@ -30,8 +29,7 @@ def build_pooled_table(signal: str, sows: list):
     "video") across ``sows``, tagged with a ``sow`` column for grouped
     CV. Returns (table, errors); a sow that can't be processed (missing
     file, too little pre-farrowing history, ...) is skipped and recorded
-    in ``errors`` rather than aborting the whole pool, mirroring
-    suite.py's per-sow error isolation.
+    in ``errors``.
     """
     if signal not in LOADERS:
         raise ValueError(f"signal must be one of {list(LOADERS)}, got {signal!r}")
@@ -57,11 +55,7 @@ def build_pooled_table(signal: str, sows: list):
 
 
 def per_sow_baseline(raw_series: pd.DataFrame, entry_time: pd.Timestamp, window_hours: float = 48) -> float:
-    """Mean raw activity over the first ``window_hours`` after pen entry —
-    a sow's own resting/pre-nest-building baseline. Unlike domain-level
-    scaling, this needs only that one animal's own early data, so it's
-    available online for a brand-new sow rather than requiring the whole
-    video population's statistics in advance.
+    """Mean raw activity over the first ``window_hours`` after pen entry.
     """
     window = raw_series[
         (raw_series["timestamp"] >= entry_time)
@@ -73,8 +67,7 @@ def per_sow_baseline(raw_series: pd.DataFrame, entry_time: pd.Timestamp, window_
 def compute_per_sow_baselines(signal: str, sows: list, window_hours: float = 48) -> tuple:
     """``per_sow_baseline`` for every sow in ``sows``. Returns
     (baselines, errors); a sow with no data in the window (or any other
-    load/parse failure) is skipped and recorded in ``errors`` rather than
-    aborting the whole batch, mirroring ``build_pooled_table``.
+    load/parse failure) is skipped and recorded in ``errors``.
     """
     if signal not in LOADERS:
         raise ValueError(f"signal must be one of {list(LOADERS)}, got {signal!r}")

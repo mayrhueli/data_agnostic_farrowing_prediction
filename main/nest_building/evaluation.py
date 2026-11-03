@@ -1,7 +1,23 @@
 # Copyright (C) 2026 Elisabeth Mayrhuber
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 """Score a detected nest-building changepoint against the farrowing onset
-time, using a 24h/48h tolerance-window scheme.
+time, using a 24h/48h tolerance-window scheme: a detection is "on time"
+if it falls within the window before farrowing, "early" if it comes
+earlier than that, and "late" if it falls after farrowing onset or
+never fires at all.
 """
 from dataclasses import dataclass
 from typing import Optional
@@ -22,7 +38,7 @@ class DetectionResult:
 
 def _classify(changepoint: Optional[pd.Timestamp], farrowing_time: pd.Timestamp, window_hours: float) -> str:
     if changepoint is None:
-        return "late"  # "detected too late or not at all" (Fig. 6 caption)
+        return "late"  # "detected too late or not at all" 
     window_start = farrowing_time - pd.Timedelta(hours=window_hours)
     if changepoint < window_start:
         return "early"

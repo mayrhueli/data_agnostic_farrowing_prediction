@@ -13,10 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""Per-instance prediction results — farrowing-anchored and online —
-for a chosen handful of sows (e.g. the same ones used for figures 1-2's
-signal-comparison/nest-building plots), using the model sr_transfer.py
-actually trained and persisted.
+"""Per-instance prediction results — farrowing-anchored and online.
 
 Unlike sr_transfer.py's pooled grouped-CV/transfer numbers (every sow
 pooled together into one aggregate) or online_eval.py's aggregated
@@ -25,7 +22,7 @@ instance's true vs. predicted value, specifically so a scatter plot can
 show one chosen animal's own prediction trajectory rather than a
 population summary.
 
-Usage:
+Usage (from the repo root):
 
     python -m video_activity.sr_transfer     # trains + persists the model, once
     python -m video_activity.named_sow_eval --sow "147002 7" "147037 18" "147145 2"
@@ -75,7 +72,7 @@ def anchored_predictions_for_sow(sow: str, model, accelerometer_scaler, per_sow_
             table["sow"] = sow
             scored = _scaled_predictions(table, signal_name, sow, model, accelerometer_scaler,
                                           per_sow_baselines, return_rows=True)
-        except Exception as e:  # noqa: BLE001 - one bad signal must not cost the other
+        except Exception as e:  # one bad signal must not cost the other
             print(f"  anchored prediction failed for {sow}/{signal_name}: {type(e).__name__}: {e}")
             continue
 
@@ -102,7 +99,7 @@ def online_predictions_for_sow(sow: str, model, accelerometer_scaler, per_sow_ba
             results = evaluate_online_for_sow_signal(
                 sow, signal_name, model, accelerometer_scaler, per_sow_baselines,
                 methods=methods, return_rows=True)
-        except Exception as e:  # noqa: BLE001 - one bad signal must not cost the other
+        except Exception as e:  # one bad signal must not cost the other
             print(f"  online prediction failed for {sow}/{signal_name}: {type(e).__name__}: {e}")
             continue
 

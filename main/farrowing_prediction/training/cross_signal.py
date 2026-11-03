@@ -13,8 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""Train a symbolic regression model on accelerometer data (pooled across
-sows, grouped k-fold CV by sow) and test whether it generalizes to
+"""Train a symbolic regression model on accelerometer data (pooled
+across sows, grouped 5-fold CV) and test whether it generalizes to
 video-derived activity data.
 
 The two signals live on wildly different scales (accelerometer magnitude
@@ -103,8 +103,8 @@ def interleaved_split(table: pd.DataFrame, train_fraction: float = 0.7):
     extrapolate (train on "far from farrowing", test on "close to
     farrowing") instead of testing in-range interpolation. Interleaving
     keeps both sets spanning the full pre-farrowing range, which is the
-    fairest in-sample check available without a second sow to hold out —
-    used as a fallback when too few sows are available for grouped CV.
+    fairest in-sample check available without a second sow to hold out.
+    Used as a fallback when too few sows are available for grouped CV.
     """
     k = max(2, round(1 / (1 - train_fraction)))
     test_mask = (np.arange(len(table)) % k) == 0
@@ -116,9 +116,9 @@ def interleaved_split(table: pd.DataFrame, train_fraction: float = 0.7):
 def grouped_cv_train_accelerometer(table: pd.DataFrame, n_splits: int = 5,
                                     return_oof: bool = False, **sr_kwargs):
     """Grouped k-fold CV, grouped by sow, on the pooled accelerometer
-    table. Returns (fold_results, best_model, best_scaler) — the
-    model/scaler from the fold with the lowest held-out MAE, kept for
-    the video-transfer check.
+    table. Returns (fold_results, best_model, best_scaler)
+    — the model/scaler from the fold with the lowest held-out MAE, kept
+    for the video-transfer check.
 
     With ``return_oof=True``, also returns a fourth item: a DataFrame of
     every fold's held-out predictions pooled together (``sow``, ``fold``,
@@ -136,8 +136,9 @@ def grouped_cv_train_accelerometer(table: pd.DataFrame, n_splits: int = 5,
     n_groups = groups.nunique()
     if n_groups < 2:
         raise ValueError(
-            f"Grouped cross-validation needs >=2 sows, got {n_groups} — this function is "
-            f"for pooled, multi-sow training."
+            f"Grouped cross-validation needs >=2 sows, got {n_groups}. With a single "
+            f"sow, use interleaved_split instead — this function is for pooled, "
+            f"multi-sow training."
         )
     n_splits = min(n_splits, n_groups)
     kf = GroupKFold(n_splits=n_splits)
@@ -190,7 +191,7 @@ def evaluate_transfer(model: OperonSymbolicRegressorWrapper, video_table: pd.Dat
     available scaling strategy: naive (reuse the accelerometer scaler),
     domain-level (a fresh video-only scaler), and — if ``per_sow_baselines``
     is given (see ``video_activity.pooling.compute_per_sow_baselines``) —
-    per-sow (each sow's own features divided by its own baseline).
+    per-sow (each sow's own 10/90... features divided by its own baseline).
 
     A sow missing from ``per_sow_baselines`` (e.g. no video data in its
     first 48h after pen entry) is simply left out of the per-sow result,
@@ -257,8 +258,8 @@ def compute_feature_sensitivity(model: OperonSymbolicRegressorWrapper, reference
     model: for each feature, vary it across its 5th-95th percentile in
     ``reference_table`` while holding every other feature at its median,
     and record the model's own (exact, not sampled) prediction. This is
-    an exact-formula alternative to SHAP (see
-    ``video_activity.figures.plot_feature_sensitivity``) — kept here,
+    the exact-formula alternative to SHAP described in
+    ``video_activity.figures.plot_feature_sensitivity`` — kept here,
     separate from plotting, so the curve data can be computed once
     (right after training, from the live model) and persisted, and the
     figure redrawn later from that CSV without needing the model again.
@@ -273,7 +274,7 @@ def compute_feature_sensitivity(model: OperonSymbolicRegressorWrapper, reference
         lo, hi = reference_table[feat].quantile([0.05, 0.95])
         if lo == hi:
             lo, hi = reference_table[feat].min(), reference_table[feat].max()
-        if lo == hi:  # a genuinely constant feature in this table
+        if lo == hi: 
             lo, hi = lo - 1, hi + 1
         grid = np.linspace(lo, hi, n_points)
 

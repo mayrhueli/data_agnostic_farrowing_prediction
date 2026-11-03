@@ -13,9 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""Seven figure types, styled with one fixed qualitative color palette
-instead of matplotlib's defaults, so every plot in the set reads
-consistently:
+"""The seven figure types:
 
 1. ``plot_signal_comparison``          -- accelerometer vs. video activity, per sow
 2. ``plot_nest_building_comparison``   -- detection changepoints over activity, per sow
@@ -36,8 +34,8 @@ read ``video_activity.named_sow_eval``'s output
 first:
 
     python -m video_activity.sr_transfer
-    python -m video_activity.named_sow_eval --sow "147368 19" "A" "B"
-    python -m video_activity.figures --sows "147368 19" "A" "B"
+    python -m video_activity.named_sow_eval --sow "sample_sow"
+    python -m video_activity.figures --sows "sample_sow"
 
 Figure 2 reads each sow's detection result from case_study.py's already
 -written ``<sow>_summary.json`` (``python -m video_activity.case_study``
@@ -76,10 +74,6 @@ NAMED_SOW_EVAL_DIR = suite.case_study.OUT_DIR / "named_sow_eval"
 # "accelerometer" in figures 1-2).
 PALETTE = ["#4E79A7", "#F28E2B", "#59A14F", "#E15759", "#B07AA1", "#76B7B2"]
 
-# Video's "naive" scaling strategy is already shown (figure 4) to be off
-# by several orders of magnitude — overlaying it with the other two on
-# one axes would crush them to invisible, so figures 6-7 skip it and
-# only overlay these two, which are on comparable scales.
 VIDEO_STRATEGIES_FOR_SCATTER = [
     ("video_domain_scaler", "domain-adapted", PALETTE[0]),
     ("per_sow_baseline", "per-sow baseline", PALETTE[2]),
@@ -94,8 +88,6 @@ def apply_style():
         "axes.spines.right": False,
         "axes.grid": True,
         "grid.alpha": 0.25,
-        # the palette colors plotted content only — every label, tick,
-        # title and legend entry stays plain black
         "text.color": "black",
         "axes.labelcolor": "black",
         "axes.titlecolor": "black",
@@ -219,19 +211,6 @@ def plot_nest_building_comparison(sows: list, out_path: Path, results_dir: Path 
 # ---------------------------------------------------------------------------
 
 def plot_accelerometer_cv(oof: pd.DataFrame, out_path: Path, bin_hours: float = 12, title_extra: str = ""):
-    """Out-of-fold prediction error (predicted − true) as a function of
-    true time-to-farrowing, binned into ``bin_hours``-wide windows and
-    shown as one boxplot per bin.
-
-    A raw true-vs-predicted scatter puts every sow/instance in one cloud
-    and, once accuracy is only moderate, reads as noise with no visible
-    structure. Binning by the true horizon and looking at the error
-    distribution per bin answers the actually operational question for
-    an early-warning system — is the model's accuracy *better or worse
-    as farrowing approaches* — and surfaces a systematic bias (median
-    error away from zero) that a scatter's diagonal-line comparison
-    doesn't make easy to read at a glance either.
-    """
     apply_style()
     oof = oof.copy()
     oof["error_hours"] = oof["y_pred_hours"] - oof["y_true_hours"]
@@ -362,13 +341,6 @@ def plot_feature_sensitivity(sensitivity: pd.DataFrame, out_path: Path):
 # ---------------------------------------------------------------------------
 
 def _scatter_panel(ax, groups: list, title: str, fallback_text: str):
-    """Overlay one or more (y_true, y_pred, color, label) series on
-    ``ax`` with a diagonal reference line and shared square limits
-    computed from whatever's actually plotted — or, if every group is
-    empty, draw ``fallback_text`` instead of a blank axes (e.g. "no
-    online window, this detector never fired" is a result worth seeing,
-    not an empty panel indistinguishable from a bug).
-    """
     groups = [(yt, yp, c, l) for yt, yp, c, l in groups if len(yt) > 0]
     ax.set_title(title, fontsize=9)
     if not groups:
@@ -390,11 +362,6 @@ def _scatter_panel(ax, groups: list, title: str, fallback_text: str):
 # ---------------------------------------------------------------------------
 
 def plot_anchored_prediction_scatter(sows: list, predictions: pd.DataFrame, out_path: Path):
-    """True vs. predicted time-to-farrowing for specific named animals,
-    farrowing-anchored (``instance_tables.build_instance_table``) — one
-    row per sow, accelerometer | video. ``predictions`` is
-    ``named_sow_eval.py``'s ``anchored_predictions.csv``.
-    """
     apply_style()
     fig, axes = plt.subplots(len(sows), 2, figsize=(11, 3.6 * len(sows)), squeeze=False)
 
@@ -432,16 +399,6 @@ def plot_anchored_prediction_scatter(sows: list, predictions: pd.DataFrame, out_
 
 def plot_online_prediction_scatter(sows: list, predictions: pd.DataFrame, out_path: Path,
                                     method: str = "NestDetect"):
-    """True vs. predicted time-to-farrowing for specific named animals,
-    in the **online** setting (``instance_tables.build_online_instance_table``,
-    triggered by ``method``'s alarm) — same layout as
-    ``plot_anchored_prediction_scatter``, so the two are easy to compare
-    side by side. ``predictions`` is ``named_sow_eval.py``'s
-    ``online_predictions.csv``. A sow/signal where ``method`` never
-    fired before farrowing shows that explicitly (see
-    ``online_eval.py``'s report for *why* it didn't) rather than a blank
-    panel — a real result, not a gap to hide.
-    """
     apply_style()
     fig, axes = plt.subplots(len(sows), 2, figsize=(11, 3.6 * len(sows)), squeeze=False)
     no_window_text = f"no online window\n({method} didn't fire\nbefore farrowing)"

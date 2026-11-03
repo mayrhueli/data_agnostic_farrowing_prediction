@@ -13,23 +13,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""Builds per-sow instance tables (ten features + a time-to-farrowing
-target) from a 1-minute ``timestamp, Acc`` series, in two windowing
-modes:
+"""Builds the per-instance feature tables used for time-to-farrowing
+prediction: a sliding window over a sow's activity series, extracting
+ten features (eight activity-magnitude features plus two crating
+features) and the remaining-time-to-farrowing target at each step.
 
-- ``build_instance_table``: a fixed window counting back from a known
-  farrowing time — useful for evaluating the prediction stage on its
-  own, independent of any detection step.
-- ``build_online_instance_table``: a window starting from a given alarm
-  time (e.g. a nest-building detector's changepoint) and running forward
-  to farrowing — the deployment-realistic setting, where the model only
-  ever sees data up to the current moment.
+Two windowing modes are provided. ``build_instance_table`` is
+**farrowing-anchored**: it always starts a fixed number of days before
+the (here, already-known) farrowing time, useful for evaluating the
+prediction stage on its own. ``build_online_instance_table`` is the
+**online** setting: it starts from a detector's alarm time instead,
+which is what a deployed system would actually have to work with (the
+true farrowing time isn't known in advance there).
 
-Both functions extract features via
-``feature_engineering.time_features.calculate_features_for_timeseries``,
-called on ``df.iloc[:i]`` at every step so no instance ever looks ahead
-of its own timestamp; they differ only in how the window's start/end
-indices are chosen.
+Both windowing functions only use data available up to each instance's
+own timestamp — no look-ahead.
 """
 import pandas as pd
 
@@ -51,7 +49,9 @@ def _build_instance_table_from_index_range(df: pd.DataFrame, farrowing_time: pd.
     slide a ``step_minutes`` window over row indices ``[idx_start, idx_end)``,
     extracting the activity features from ``df.iloc[:i]`` at each step — only
     data available up to that point, never a look-ahead — plus the crating
-    features and the remaining-time target.
+    features and the remaining-time target. The two public functions differ
+    only in how ``idx_start``/``idx_end`` are chosen (a fixed window before
+    the known farrowing time, vs. from a detector's alarm time onward).
     """
     rows = []
     for i in range(idx_start, idx_end, step_minutes):
@@ -78,16 +78,6 @@ def _build_instance_table_from_index_range(df: pd.DataFrame, farrowing_time: pd.
 
     table = pd.concat(rows, ignore_index=True)
     table["currently_crated"] = table["currently_crated"].astype(int)
-
-    # mean_day/mean_night are computed over a fixed calendar-day window
-    # near the start of the recording; for a short or gappy series that
-    # window can be entirely empty, producing NaN for every row rather
-    # than just a few. Forward/back-fill instead of dropping rows for it
-    # — dropping would silently empty the whole table instead of just
-    # losing two weak features. A column that is NaN for literally every
-    # row (ffill/bfill has nothing to propagate) falls back to 0 rather
-    # than being left NaN, which would otherwise crash a scaler fit on
-    # this table downstream.
     table[FEATURE_COLUMNS] = table[FEATURE_COLUMNS].ffill().bfill().fillna(0.0)
 
     table = table.dropna(subset=["remaining_minutes"]).reset_index(drop=True)

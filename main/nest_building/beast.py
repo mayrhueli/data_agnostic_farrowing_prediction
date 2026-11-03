@@ -1,10 +1,23 @@
 # Copyright (C) 2026 Elisabeth Mayrhuber
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""BEAST changepoint detection for nest-building onset:
-periodicity of one day, periodic seasonality, at most one changepoint.
-Uses the ``Rbeast`` package published by the original BEAST authors
-(Zhao, 2019/2025), same as the paper. BEAST is batch (needs the whole
-signal) and nondeterministic (MCMC), unlike CUSUM/NestDetect.
+"""BEAST changepoint detection for nest-building onset: periodicity of
+one day, periodic seasonality, at most one changepoint. Uses the
+``Rbeast`` package published by the original BEAST authors (Zhao,
+2019/2025). BEAST is batch (needs the whole signal) and nondeterministic
+(MCMC), unlike CUSUM/NestDetect.
 """
 import numpy as np
 import pandas as pd
@@ -12,7 +25,7 @@ import pandas as pd
 try:
     import Rbeast as rb
     RBEAST_AVAILABLE = True
-except ImportError:  # pragma: no cover
+except ImportError:  
     RBEAST_AVAILABLE = False
 
 START_OFFSET = 2 * 1440  # detection starts 2 days after pen entry

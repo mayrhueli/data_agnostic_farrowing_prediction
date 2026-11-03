@@ -14,11 +14,11 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 """Train an Operon symbolic-regression model on accelerometer data
-(pooled across every sow you have, grouped k-fold CV) and test whether
+(pooled across every sow you have, grouped 5-fold CV) and test whether
 it generalizes to video-derived activity data, with and without
 domain-specific feature rescaling.
 
-Usage:
+Usage (from the repo root):
 
     python -m video_activity.sr_transfer
 
@@ -28,22 +28,6 @@ so the mechanism (pooling, Operon fitting, domain scaling, transfer
 evaluation) is still exercised end to end, and says so clearly in the
 output — rerun with more sows under data/raw/{accelerometer,video}/ and
 data/raw/meta/ for a real result.
-
-Besides ``sr_transfer_summary.json``, this writes the per-row data
-``video_activity.figures`` needs for its figures 3-5
-(``accelerometer_cv_oof.csv``, ``transfer_predictions.csv``,
-``feature_sensitivity.csv``) so that module can redraw them later
-without retraining — important since a fresh GP run can land on a
-different model (and, for the video-transfer figure, a different naive
-result that overflows by a different amount), so a figure regenerated
-from a *new* run wouldn't necessarily match the numbers already written
-to ``sr_transfer_summary.json``. For the same reason, it also persists
-the trained model itself (``model.json`` — its formula string, see
-``operon_sr.OperonSymbolicRegressorWrapper.dump_model``), the
-accelerometer scaler it was fit with (``accelerometer_scaler.joblib``),
-and the video per-sow baselines (``per_sow_baselines.json``) —
-``video_activity.online_eval`` loads these to test the *actual selected
-model* in the online setting, rather than retraining a new one.
 """
 import argparse
 import json
@@ -59,8 +43,9 @@ from video_activity import suite
 from video_activity.pooling import build_pooled_table, compute_per_sow_baselines
 from farrowing_prediction.training.instance_tables import FEATURE_COLUMNS
 from farrowing_prediction.training.cross_signal import (
+    interleaved_split,
     grouped_cv_train_accelerometer, evaluate_transfer, fit_activity_scaler, apply_scaler,
-    apply_per_sow_baseline, compute_feature_sensitivity, interleaved_split,
+    apply_per_sow_baseline, compute_feature_sensitivity,
 )
 from farrowing_prediction.training.operon_sr import OperonSymbolicRegressorWrapper
 
@@ -80,8 +65,7 @@ def accelerometer_sows(pairs: dict = None, exclude: set = None) -> list:
     then runs on (just via their accelerometer trace instead of video).
     That model would have already seen most of those animals during
     training, so "generalizes to video" would really be "generalizes to
-    video for animals it was partly trained on" — a much weaker and
-    easily-overstated claim than a genuinely held-out evaluation set.
+    video for animals it was partly trained on".
     """
     pairs = pairs if pairs is not None else suite.discover_pairs()
     exclude = exclude or set()

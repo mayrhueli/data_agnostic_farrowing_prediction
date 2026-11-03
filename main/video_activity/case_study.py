@@ -17,9 +17,9 @@
 NestDetect) on both the accelerometer signal and the video-derived
 (optical-flow) activity signal for one sow, and compare them.
 
-Usage:
+Usage (from the repo root):
 
-    python -m video_activity.case_study --sow "147368 19"
+    python -m video_activity.case_study --sow "sample_sow"
 
 Designed to run per-sow so it can be looped over once more paired
 accelerometer/video sows are added under data/raw/{accelerometer,video}/
@@ -32,6 +32,7 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from video_activity.ingestion import load_accelerometer_series, load_video_series, load_meta
@@ -58,7 +59,7 @@ def run_detection_methods(df: pd.DataFrame, signal_name: str, farrowing_time: pd
     def _run(method, fn):
         try:
             cp = fn()
-        except Exception as e:  # noqa: BLE001 - one method's failure must not cost the others
+        except Exception as e: 
             print(f"  {method} failed on {signal_name}: {type(e).__name__}: {e}")
             results[method] = None
             return
@@ -85,6 +86,7 @@ def plot_detection(acc_df, video_df, detections, farrowing_time, sow, out_path):
         days_to_farrowing = (df["timestamp"] - farrowing_time).dt.total_seconds() / 86400
         ax.plot(days_to_farrowing, rolling_12h, color="tab:blue", label="rolling mean 12h", linewidth=1)
 
+        end_farrowing = None
         for method, det in detections[signal_name].items():
             if det is None or det.changepoint is None:
                 continue
@@ -153,6 +155,6 @@ def main(sow: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the case study for one sow. "
                                                   "For every paired sow you have, use video_activity.suite instead.")
-    parser.add_argument("--sow", default="147368 19", help="Single sow id, e.g. '147368 19'")
+    parser.add_argument("--sow", default="sample_sow", help="Single sow id, e.g. 'sample_sow'")
     args = parser.parse_args()
     main(args.sow)
