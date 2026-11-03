@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "video-farrowing-prediction"
+version = "0.1.0"
+description = "Nest-building detection and time-to-farrowing prediction from accelerometer and video-derived activity signals"
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+authors = [{ name = "Elisabeth Mayrhuber" }]
+requires-python = ">=3.10"
+dependencies = [
+    "pandas",
+    "numpy",
+    "scipy",
+    "scikit-learn",
+    "matplotlib",
+    "joblib",
+    "pyoperon",
+    "Rbeast",
+    "tabulate",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["video_activity*", "farrowing_prediction*", "feature_engineering*", "nest_building*"]

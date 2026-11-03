@@ -221,6 +221,8 @@ __marimo__/
 
 # Data and result directory
 /data/*
-!/data/.gitkeep
+!/data/raw/accelerometer/.gitkeep
+!/data/raw/video/.gitkeep
+!/data/raw/meta/.gitkeep
 /out/*
 !/out/.gitkeep
